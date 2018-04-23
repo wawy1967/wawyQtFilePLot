@@ -22,6 +22,8 @@ private slots:
     void on_actionSave_As_triggered();
     void on_actionQuit_triggered();
 
+    void on_pushButtonPlot_clicked();
+
 private:
     Ui::MainWindow *ui;
     QString mTextFileName;
