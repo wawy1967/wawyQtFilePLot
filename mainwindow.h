@@ -15,11 +15,16 @@ public:
 private slots:
     void usbSerialRead(void);
     void on_pushButtonAcquire_clicked();
-    void on_pushButtonStop_clicked();
-    void on_pushButtonONN_clicked();
-    void on_pushButtonOFF_clicked();
+    void on_pushButton_clicked();
+    void on_actionNew_triggered();
+    void on_actionOpen_triggered();
+    void on_actionSave_triggered();
+    void on_actionSave_As_triggered();
+    void on_actionQuit_triggered();
+
 private:
     Ui::MainWindow *ui;
+    QString mTextFileName;
     QSerialPort *serial;
     QVector<double> temp;
     QByteArray serialData;
