@@ -11,8 +11,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->tabWidget->setCurrentIndex(0);
     serial = new QSerialPort(this);
-    serial->setPortName("/dev/ttyACM0");  //Linux "/dev/ttyACM0"
+    serial->setPortName("COM3");  //Linux "/dev/ttyACM0"
     serial->setBaudRate(QSerialPort::Baud9600);
     serial->setDataBits(QSerialPort::Data8);
     serial->setParity(QSerialPort::NoParity);
@@ -183,7 +184,7 @@ void MainWindow::on_actionSave_As_triggered()
 
 void MainWindow::on_actionQuit_triggered()
 {
-    ;
+    qApp->quit();
 }
 
 void MainWindow::on_pushButtonPlot_clicked()
