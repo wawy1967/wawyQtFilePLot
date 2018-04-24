@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 #include <QMainWindow>
 #include <QSerialPort>
+#include <dialogabout.h>
+
 namespace Ui {
 class MainWindow;
 }
@@ -21,14 +23,18 @@ private slots:
     void on_actionSave_triggered();
     void on_actionSave_As_triggered();
     void on_actionQuit_triggered();
-
     void on_pushButtonPlot_clicked();
+
+    void on_pushButtonClear_clicked();
+
+    void on_actionTempReader_triggered();
 
 private:
     Ui::MainWindow *ui;
-    QString mTextFileName;
+    QString mTextFileName = "defaultFile.txt";
     QSerialPort *serial;
     QVector<double> temp;
     QByteArray serialData;
+    DialogAbout *myAbout;
 };
 #endif // MAINWINDOW_H

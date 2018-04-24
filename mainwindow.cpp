@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QThread>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -12,8 +13,9 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->tabWidget->setCurrentIndex(0);
+    ui->statusBar->showMessage(mTextFileName);
     serial = new QSerialPort(this);
-    serial->setPortName("COM3");  //Linux "/dev/ttyACM0"
+    serial->setPortName("/dev/ttyACM0");//Linux "/dev/ttyACM0"
     serial->setBaudRate(QSerialPort::Baud9600);
     serial->setDataBits(QSerialPort::Data8);
     serial->setParity(QSerialPort::NoParity);
@@ -30,8 +32,13 @@ void MainWindow::on_pushButtonAcquire_clicked()
 {
     if (ui->pushButtonAcquire->text()=="Acquire")
     {
+        if (!serial->open(QIODevice::ReadWrite))
+        {
+            QMessageBox::information(0,"Error",
+                                     "Cannot open port!");
+            return;
+        }
         ui->pushButtonAcquire->setText("Stop");
-        serial->open(QIODevice::ReadWrite);
         serial->clear();
         connect(serial,SIGNAL(readyRead()),
                 this,SLOT(usbSerialRead()));
@@ -41,8 +48,27 @@ void MainWindow::on_pushButtonAcquire_clicked()
         disconnect(serial,SIGNAL(readyRead()),
                    this,SLOT(usbSerialRead()));
         ui->pushButtonAcquire->setText("Acquire");
+        serial->close();
     }
 
+}
+
+void MainWindow::usbSerialRead(void)
+{
+    if (serial->bytesAvailable())
+    {
+        serialData = serial->readLine();
+        //remove \r\n characters
+        serialData.truncate(serialData.size()-2);
+        double d = serialData.toDouble();
+        if (d != 0.0)
+        {
+            temp.push_back(serialData.toDouble());
+            ui->lcdNumber->display(temp.back());
+            ui->textBrowser->append(serialData);
+        }
+        QThread::msleep(500);
+    }
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -51,48 +77,49 @@ void MainWindow::on_pushButton_clicked()
     {
         ui->pushButton->setText("OFF LED");
         QByteArray command = "n";
-        if (!serial->isWritable())
-            serial->open(QIODevice::ReadWrite);
-        serial->write(command);
+        if (serial->isWritable())
+            serial->write(command);
+        else if (serial->open(QIODevice::ReadWrite))
+            serial->write(command);
+        else
+        {
+            QMessageBox::information(0,"Error",
+                     "Cannot open port!");
+            return;
+        }
     }
     else
     {
         ui->pushButton->setText("ON LED");
         QByteArray command = "f";
-        if (!serial->isWritable())
-            serial->open(QIODevice::ReadWrite);
-        serial->write(command);
-    }
-}
-
-void MainWindow::usbSerialRead(void)
-{
-    if (serial->bytesAvailable()>64)
-    {
-        serialData = serial->readLine();
-        //remove \r\n characters
-        serialData.truncate(serialData.size()-2);
-        temp.push_back(serialData.toDouble());
-        ui->lcdNumber->display(temp.back());
-        ui->textBrowser->append(serialData);
+        if (serial->isWritable())
+            serial->write(command);
+        else if (serial->open(QIODevice::ReadWrite))
+            serial->write(command);
+        else
+        {
+            QMessageBox::information(0,"Error",
+                     "Cannot open port!");
+            return;
+        }
     }
 }
 
 void MainWindow::on_actionNew_triggered()
 {
-        /*(1)opens file dialog to get new text file*/
         QString f = QFileDialog::getSaveFileName(
-                    0,"File","////.//","Text (*.txt)",0,0);
-        if (f == NULL) return; //user cancel new file
+                    0,"File","////.//",
+                    "Text (*.txt)",0,0);
+        if (f == NULL) return;
         mTextFileName = f;
-        /*(2)opens text file*/
         QFile file(mTextFileName);
         if (!file.open(QFile::WriteOnly|QFile::Text))
         {
-            QMessageBox::information(0,"File Error","Cannot open file!");
+            QMessageBox::information(0,"Error",
+                         "Cannot open file!");
             return;
         }
-        /*(3)writes "" to new file*/
+        ui->statusBar->showMessage(mTextFileName);
         QTextStream outWrite(&file);
         outWrite << "" << endl;
         file.flush();
@@ -101,30 +128,26 @@ void MainWindow::on_actionNew_triggered()
 
 void MainWindow::on_actionOpen_triggered()
 {
-    /*
-        (1)selects text file
-        (2)opens text file
-        (3)reads Temperature and saves to QVector<double> tempTemperature
-        */
-        /*(1) Select text file*/
         QString f = QFileDialog::getOpenFileName(
-                    0,"Open file",".","Text File (*)");
+                    0,"Open file","////.//",
+                    "Text File (*.txt)");
         if (f == NULL)  return;
         mTextFileName = f;
-        /*(2) Open text file*/
         QFile file(mTextFileName);
         if (!file.open(QFile::ReadOnly|QFile::Text))
         {
-            QMessageBox::information(0,"File Error","Cannot open file!");
+            QMessageBox::information(0,"Error",
+                         "Cannot open file!");
             return;
         }
-        /*(3)read Temperature and save to vector<double> temp */
-        QString dataLine;
+        ui->statusBar->showMessage(mTextFileName);
+        QByteArray dataLine;
         temp.clear();
         ui->textBrowser->clear();
         while (!file.atEnd())
         {
             dataLine = file.readLine();
+            dataLine.truncate(dataLine.size()-2);
             temp.push_back(dataLine.toDouble());
             ui->textBrowser->append(dataLine);
         }
@@ -134,20 +157,14 @@ void MainWindow::on_actionOpen_triggered()
 
 void MainWindow::on_actionSave_triggered()
 {
-    /*This function
-    (1)opens text file
-    (2)writes Temperature to text file
-    */
-     /*(1)opens text file*/
     QFile file(mTextFileName);
     if (!file.open(QFile::WriteOnly|QFile::Text))
     {
-        QMessageBox::information(0,"File Error","Cannot open file!");
+        QMessageBox::information(0,"Error",
+                     "Cannot open file!");
         return;
     }
-    /*(2)writes tempTemperature to text file*/
     QTextStream outWrite(&file);
-    //save temperatures to files.
     for (int i=0;i<temp.size();i++)
         outWrite << temp.at(i) << endl;
     file.flush();
@@ -156,25 +173,19 @@ void MainWindow::on_actionSave_triggered()
 
 void MainWindow::on_actionSave_As_triggered()
 {
-    /*
-        (1)creates text file
-        (2)opens text file
-        (3)writes tempTemperature to text file
-        */
-
-        /*(1)creates text file */
         QString f = QFileDialog::getSaveFileName(
-                    0,"Save as","////.//","Text File (*.txt)");
+                    0,"Save as","////.//",
+                    "Text File (*.txt)");
         if (f == NULL) return;
         mTextFileName = f;
-         /*(2)opens text file*/
         QFile file(mTextFileName);
         if (!file.open(QFile::WriteOnly|QFile::Text))
         {
-            QMessageBox::information(0,"File Error","Cannot create file!");
+            QMessageBox::information(0,"Error",
+                         "Cannot create file!");
             return;
         }
-        /*(3)writes tempTemperature to text file*/
+        ui->statusBar->showMessage(mTextFileName);
         QTextStream outWrite(&file);
         for (int i=0;i<temp.size();i++)
             outWrite << temp.at(i) << endl;
@@ -189,7 +200,6 @@ void MainWindow::on_actionQuit_triggered()
 
 void MainWindow::on_pushButtonPlot_clicked()
 {
-    // generate some data:
     QVector<double> x, y;
     x.resize(temp.size());
     y.resize(temp.size());
@@ -198,14 +208,25 @@ void MainWindow::on_pushButtonPlot_clicked()
       x[i] = i;
       y[i] = temp.at(i);
     }
-    // create graph and assign data to it:
     ui->widgetPlot->addGraph();
     ui->widgetPlot->graph(0)->setData(x, y);
-    // give the axes some labels:
     ui->widgetPlot->xAxis->setLabel("x");
-    ui->widgetPlot->yAxis->setLabel("y");
-    // set axes ranges, so we see all data:
+    ui->widgetPlot->yAxis->setLabel("Temperature Celcuis");
+    ui->widgetPlot->setWindowTitle("Room Temperature");
     ui->widgetPlot->xAxis->setRange(0, temp.size());
     ui->widgetPlot->yAxis->setRange(0, 50);
     ui->widgetPlot->replot();
+}
+
+void MainWindow::on_pushButtonClear_clicked()
+{
+    ui->textBrowser->clear();
+    temp.clear();
+    ui->lcdNumber->display(0.0);
+}
+
+void MainWindow::on_actionTempReader_triggered()
+{
+    myAbout = new DialogAbout(this);
+    myAbout->show();
 }

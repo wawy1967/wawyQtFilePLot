@@ -38,7 +38,7 @@
        <rect>
         <x>50</x>
         <y>40</y>
-        <width>84</width>
+        <width>97</width>
         <height>124</height>
        </rect>
       </property>
@@ -47,6 +47,13 @@
         <widget class="QPushButton" name="pushButtonAcquire">
          <property name="text">
           <string>Acquire</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButtonClear">
+         <property name="text">
+          <string>Clear</string>
          </property>
         </widget>
        </item>
@@ -102,7 +109,7 @@
        <rect>
         <x>30</x>
         <y>50</y>
-        <width>311</width>
+        <width>351</width>
         <height>181</height>
        </rect>
       </property>
@@ -116,7 +123,7 @@
      <x>0</x>
      <y>0</y>
      <width>479</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -129,7 +136,23 @@
     <addaction name="actionSave_As"/>
     <addaction name="actionQuit"/>
    </widget>
+   <widget class="QMenu" name="menuConnect">
+    <property name="title">
+     <string>Connect</string>
+    </property>
+    <addaction name="actionPort0"/>
+    <addaction name="actionPort1"/>
+    <addaction name="actionPort2"/>
+   </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+    <addaction name="actionTempReader"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuConnect"/>
+   <addaction name="menuAbout"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -138,8 +161,19 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionNew"/>
+   <addaction name="actionOpen"/>
+   <addaction name="actionSave"/>
+   <addaction name="actionSave_As"/>
+   <addaction name="actionQuit"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="font">
+    <font>
+     <pointsize>8</pointsize>
+    </font>
+   </property>
+  </widget>
   <action name="actionNew">
    <property name="text">
     <string>New</string>
@@ -175,6 +209,35 @@
    </property>
    <property name="shortcut">
     <string>Alt+Q</string>
+   </property>
+  </action>
+  <action name="actionPort0">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>/dev/ACM0</string>
+   </property>
+  </action>
+  <action name="actionPort1">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>/dev/ACM1</string>
+   </property>
+  </action>
+  <action name="actionPort2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>/dev/ACM2</string>
+   </property>
+  </action>
+  <action name="actionTempReader">
+   <property name="text">
+    <string>AboutTempReader</string>
    </property>
   </action>
  </widget>
